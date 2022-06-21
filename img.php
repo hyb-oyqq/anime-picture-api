@@ -1,6 +1,8 @@
 <?php
-$img_array = glob("img/*.{gif,jpg,png,webp}",GLOB_BRACE); /* 此处img更改为自己对应的图片文件夹*/
-$img = array_rand($img_array); 
-$dz = $img_array[$img];
-header("Location:".$dz);
+$arr=file('img.txt');      /* 此处img.txt中img更改为自己对应的txt文件名*/
+$n=count($arr)-1;
+for ($i=1;$i<=1;$i++){
+$x=rand(0,$n);
+header("Location:".$arr[$x],"\n");
+}
 ?>
