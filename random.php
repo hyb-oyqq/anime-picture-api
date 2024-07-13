@@ -1,4 +1,10 @@
 <?php
+
+// API名称和客户端IP
+$API_name = 'qiqi ACG API';
+$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+$start_time = microtime(true); // 开始时间记录
+
 // 直接从$_GET中获取参数，无需手动解析
 $type = isset($_GET['type']) ? $_GET['type'] : 'webp';
 $return_json = isset($_GET['return']) && $_GET['return'] === 'json';
@@ -45,8 +51,16 @@ if ($return_json) {
     // 构建完整的图片URL
     $full_image_url = $base_url . substr($img_path, strlen($imageDirectory));
     
-    // 返回JSON数据，其中包含完整的图片URL
-    echo json_encode(['url' => $full_image_url], JSON_UNESCAPED_SLASHES);
+    // 计算处理过程所用时长，单位：秒
+    $process_time = microtime(true) - $start_time;
+    
+    // 返回标准化的JSON数据
+    echo json_encode([
+        'API_name' => $API_name, 
+        'imgurl' => $full_image_url,
+        'client_ip' => $client_ip,
+        'process' => $process_time
+    ], JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
 } else {
     // 直接读取并输出图片内容
     readfile($img_path);
