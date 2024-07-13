@@ -4,6 +4,7 @@
 $API_name = 'qiqi ACG API';
 $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
 $start_time = microtime(true); // 开始时间记录
+$redirect = isset($_GET['redirect']) && $_GET['redirect'] == 302;
 
 // 直接从$_GET中获取参数，无需手动解析
 $type = isset($_GET['type']) ? $_GET['type'] : 'webp';
@@ -61,6 +62,15 @@ if ($return_json) {
         'client_ip' => $client_ip,
         'process' => $process_time
     ], JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
+
+} elseif ($redirect) {
+    // 构建完整的图片URL
+    $full_image_url = $base_url . substr($img_path, strlen($imageDirectory));
+    
+    // 发送HTTP 302重定向到图片链接
+    header("Location: " . $full_image_url, true, 302);
+    exit; // 重定向后结束脚本执行
+
 } else {
     // 直接读取并输出图片内容
     readfile($img_path);
