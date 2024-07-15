@@ -2,7 +2,8 @@
 
 // API名称和客户端IP
 $API_name = 'qiqi ACG API';
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR']; // 兼容未设置HTTP_X_FORWARDED_FOR的情况
+$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR']; 
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : null;
 $start_time = microtime(true); // 开始时间记录
 
 // 直接从$_GET中获取参数，无需手动解析
@@ -70,7 +71,29 @@ function streamRemoteImage($url) {
 }
 
 if (!$return_json) {
-    streamRemoteImage($img_link);
+    // 默认行为设为302重定向，除非redirect参数明确指定了其他行为
+    $defaultRedirect = '302';
+    
+    switch ($redirect) {
+        case '302':
+            // 302重定向到图片链接
+            header("HTTP/1.1 302 Found");
+            header("Location: $img_link");
+            exit;
+            break;
+            
+        case 'stream':
+            // 流式传输图片
+            streamRemoteImage($img_link);
+            break;
+            
+        default:
+            // 当redirect参数未明确指定时，使用默认的302重定向
+            header("HTTP/1.1 302 Found");
+            header("Location: $img_link");
+            exit;
+            break;
+    }
 }
 
 // 根据return参数决定返回方式
