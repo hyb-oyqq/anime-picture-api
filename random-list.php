@@ -78,13 +78,18 @@ if ($return_json) {
     // 构建完整的图片URL
     $full_image_url = $img_link;
     
+    // 使用getimagesize获取图片尺寸
+    list($width, $height) = getimagesize($img_path);
+    
     // 计算处理过程所用时长，单位：秒
     $process_time = microtime(true) - $start_time;
     
-    // 返回标准化的JSON数据
+    // 返回标准化的JSON数据，包括图片的宽度和高度
     echo json_encode([
         'API_name' => $API_name, 
         'imgurl' => $full_image_url,
+        'width' => $width,
+        'height' => $height,
         'client_ip' => $client_ip,
         'process' => $process_time
     ], JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);

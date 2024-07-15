@@ -10,14 +10,22 @@ $redirect = isset($_GET['redirect']) && $_GET['redirect'] == 302;
 $type = isset($_GET['type']) ? $_GET['type'] : 'webp';
 $return_json = isset($_GET['return']) && $_GET['return'] === 'json';
 
+// MIME类型映射表
+$mimeTypes = [
+    'webp' => 'image/webp',
+    'png' => 'image/png',
+    'jpg' => 'image/jpeg',
+    'jpeg' => 'image/jpeg',
+];
+
 // 设置MIME类型
 if ($return_json) {
     header('Content-Type: application/json');
-} elseif ($type === 'webp') {
-    header('Content-Type: image/webp');
 } else {
-    // 假设其他类型的图片默认为JPEG
-    header('Content-Type: image/jpeg');
+    // 根据$type设置正确的MIME类型
+    $type = strtolower($type); // 确保$type是小写的
+    $mimeType = isset($mimeTypes[$type]) ? $mimeTypes[$type] : 'image/jpeg'; // 默认为JPEG
+    header('Content-Type: ' . $mimeType);
 }
 
 // 检查目录是否存在且为目录
@@ -52,13 +60,18 @@ if ($return_json) {
     // 构建完整的图片URL
     $full_image_url = $base_url . substr($img_path, strlen($imageDirectory));
     
+    // 使用getimagesize获取图片尺寸
+    list($width, $height) = getimagesize($img_path);
+
     // 计算处理过程所用时长，单位：秒
     $process_time = microtime(true) - $start_time;
     
-    // 返回标准化的JSON数据
+    // 返回标准化的JSON数据，包括图片的宽度和高度
     echo json_encode([
         'API_name' => $API_name, 
         'imgurl' => $full_image_url,
+        'width' => $width,
+        'height' => $height,
         'client_ip' => $client_ip,
         'process' => $process_time
     ], JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
