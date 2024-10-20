@@ -1,5 +1,8 @@
 <?php
 
+// 流式传输开关
+$streaming_enabled = true; // true为启用并默认使用流式传输，false则默认使用302
+
 // API名称和客户端IP
 $API_name = 'qiqi ACG API';
 $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR']; 
@@ -16,6 +19,7 @@ $mimeTypes = [
     'png' => 'image/png',
     'jpg' => 'image/jpeg',
     'jpeg' => 'image/jpeg',
+    'bmp' => 'image/bmp', // 添加BMP格式的MIME类型
 ];
 
 // 设置MIME类型
@@ -72,26 +76,60 @@ function streamRemoteImage($url) {
 
 if (!$return_json) {
     // 默认行为设为302重定向，除非redirect参数明确指定了其他行为
-    $defaultRedirect = '302';
+    $defaultRedirect = $streaming_enabled ? 'stream' : '302';
     
+    // 验证 img_link 是否为合法的 URL
+    if (!filter_var($img_link, FILTER_VALIDATE_URL)) {
+        die('Invalid URL');
+    }
+
+    // 提取302重定向的逻辑到一个单独的函数中
+    function redirect302($img_link) {
+        header("HTTP/1.1 302 Found");
+        header("Location: $img_link");
+        exit;
+    }
+
     switch ($redirect) {
         case '302':
             // 302重定向到图片链接
-            header("HTTP/1.1 302 Found");
-            header("Location: $img_link");
-            exit;
+            redirect302($img_link);
             break;
             
         case 'stream':
-            // 流式传输图片
-            streamRemoteImage($img_link);
+            // 检查流式传输是否启用
+            if ($streaming_enabled) {
+                try {
+                    // 流式传输图片
+                    streamRemoteImage($img_link);
+                } catch (Exception $e) {
+                    // 处理异常，例如记录日志或返回错误信息
+                    error_log("Failed to stream image: " . $e->getMessage());
+                    header("HTTP/1.1 500 Internal Server Error");
+                    echo "Failed to stream image";
+                    exit;
+                }
+            } else {
+                // 如果流式传输未启用，则进行302重定向
+                redirect302($img_link);
+            }
             break;
             
         default:
-            // 当redirect参数未明确指定时，使用默认的302重定向
-            header("HTTP/1.1 302 Found");
-            header("Location: $img_link");
-            exit;
+            // 当redirect参数未明确指定时，使用默认的行为
+            if ($defaultRedirect === 'stream') {
+                try {
+                    streamRemoteImage($img_link);
+                } catch (Exception $e) {
+                    // 处理异常，例如记录日志或返回错误信息
+                    error_log("Failed to stream image: " . $e->getMessage());
+                    header("HTTP/1.1 500 Internal Server Error");
+                    echo "Failed to stream image";
+                    exit;
+                }
+            } else {
+                redirect302($img_link);
+            }
             break;
     }
 }
@@ -102,7 +140,7 @@ if ($return_json) {
     $full_image_url = $img_link;
     
     // 使用getimagesize获取图片尺寸
-    list($width, $height) = getimagesize($img_path);
+    list($width, $height) = getimagesize($img_link);
     
     // 计算处理过程所用时长，单位：秒
     $process_time = microtime(true) - $start_time;
