@@ -2,7 +2,7 @@
 
 // API名称和客户端IP
 $API_name = 'qiqi ACG API';
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+$client_ip = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
 $start_time = microtime(true); // 开始时间记录
 $redirect = isset($_GET['redirect']) && $_GET['redirect'] == 302;
 
@@ -53,7 +53,7 @@ if (!preg_match('/^' . preg_quote($imageDirectory, '/') . '.*\.(jpg|jpeg|png)$/'
 }
 
 // 构建基础URL
-$base_url = "https://beta-api.oyqq.us.kg/" . $imageDirectory;
+$base_url = "https://dav-dmapi.hybgzs.com/" . $imageDirectory;
 
 // 根据return参数决定返回方式
 if ($return_json) {
